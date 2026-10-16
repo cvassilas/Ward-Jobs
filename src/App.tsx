@@ -8,6 +8,7 @@ import { JobsScreen, FollowUpScreen, PatientsScreen } from "./components/Screens
 import { HandoverScreen } from "./components/Handover";
 import { SettingsScreen } from "./components/Settings";
 import { SyncPill } from "./components/TeamSync";
+import { ResourcesButton } from "./components/Resources";
 import { Toasts } from "./components/NotifySettings";
 import { useNotificationEngine } from "./lib/notifications";
 import { startSyncLoop } from "./lib/sync";
@@ -82,7 +83,7 @@ export default function App() {
             <h1 className="text-2xl font-bold tracking-tight">{TITLES[tab]}</h1>
             <p className="text-xs text-[var(--c-muted)]">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}{data.settings.myName ? ` · ${data.settings.myName}` : ""}</p>
           </div>
-          <SyncPill />
+          <div className="flex items-center gap-2"><SyncPill /><ResourcesButton /></div>
         </header>
         {tab === "jobs" && <JobsScreen ward={ward} setWard={setWard} />}
         {tab === "follow" && <FollowUpScreen ward={ward} setWard={setWard} />}

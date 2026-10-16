@@ -55,7 +55,14 @@ export interface Settings {
   pin?: string; // 4-6 digits; app locks after being in the background
   lockAfterMinutes: number;
   notify?: NotifyPrefs;
+  links?: ResourceLink[];
 }
+
+export interface ResourceLink { id: string; title: string; url: string }
+export const DEFAULT_LINKS: ResourceLink[] = [
+  { id: "r-wx-anaes", title: "Whipps Cross Anaesthetics & ICU (Box)", url: "https://whippscrossanaestheticdepartme.box.com/s/wd090mzh7mrtdn4vgpzarvuy2coyxa2d" },
+  { id: "r-barts", title: "Barts Health (Box)", url: "https://barts.box.com/s/i58b8k6ivraunruvs9duk5zkbk5ld0dt" },
+];
 
 export interface NotifyPrefs {
   urgent: boolean; // urgent jobs added by others
