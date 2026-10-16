@@ -1,0 +1,72 @@
+name: Set up Supabase (sync + notifications)
+
+# Runs the SQL scripts, stores the push keys and deploys the ward-notify function,
+# using a Supabase access token saved as the SUPABASE_ACCESS_TOKEN secret.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/supabase-setup.yml']
+
+env:
+  PROJECT_REF: xrjnmsmfdwndjebxlnag
+  VAPID_PUBLIC_KEY: BFZ5gM90PRmvvaND_wgeoNsKPguQ-ssgOEjrQEJenOu_xMWLsDM_04WnRUOPs8ZsD1KVfO4ksX5fg70ohXAjLjk
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        id: check
+        env:
+          T: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          V: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          if [ -z "$T" ] || [ -z "$V" ]; then
+            echo "::warning::Add the SUPABASE_ACCESS_TOKEN and VAPID_PRIVATE_KEY secrets to this repo, then run this workflow again."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run SQL scripts
+        if: steps.check.outputs.ok == 'true'
+        env:
+          T: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          for f in supabase/setup.sql supabase/notifications.sql; do
+            body=$(python3 -c 'import json,sys; print(json.dumps({"query": open(sys.argv[1]).read()}))' "$f")
+            code=$(curl -s -o /tmp/q.json -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+              -H "Authorization: Bearer $(printf '%s' "$T" | tr -d '[:space:]')" -H "Content-Type: application/json" -d "$body")
+            echo "$f -> HTTP $code $(head -c 300 /tmp/q.json)"
+            [ "$code" = "200" ] || [ "$code" = "201" ] || { echo "::error::$f failed: HTTP $code"; exit 1; }
+          done
+
+      - name: Store push keys
+        if: steps.check.outputs.ok == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          export SUPABASE_ACCESS_TOKEN=$(printf '%s' "$SUPABASE_ACCESS_TOKEN" | tr -d '[:space:]')
+          npx -y supabase@2 secrets set --project-ref "$PROJECT_REF" \
+            "VAPID_PUBLIC_KEY=$VAPID_PUBLIC_KEY" "VAPID_PRIVATE_KEY=$(printf '%s' "$VAPID_PRIVATE_KEY" | tr -d '[:space:]')"
+
+      - name: Deploy ward-notify (JWT check off)
+        if: steps.check.outputs.ok == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          export SUPABASE_ACCESS_TOKEN=$(printf '%s' "$SUPABASE_ACCESS_TOKEN" | tr -d '[:space:]')
+          npx -y supabase@2 functions deploy ward-notify --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+
+      - name: Check it works
+        if: steps.check.outputs.ok == 'true'
+        run: |
+          sleep 5
+          code=$(curl -s -o /tmp/f.json -w '%{http_code}' -X POST "https://$PROJECT_REF.supabase.co/functions/v1/ward-notify" \
+            -H "apikey: sb_publishable_3Ayo7DR-LRdbZiWdsXtifw_Dd5l4nT7" -H "Content-Type: application/json" -d '{"space":"x"}')
+          echo "ward-notify -> HTTP $code $(cat /tmp/f.json)"
+          [ "$code" = "400" ] && echo "::notice::Notifications are set up on Supabase" || { echo "::error::ward-notify not answering as expected"; exit 1; }
