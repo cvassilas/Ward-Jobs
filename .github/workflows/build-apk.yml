@@ -1,0 +1,77 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check update/backup token
+        env:
+          T: ${{ secrets.APP_GH_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then echo "::warning::APP_GH_TOKEN secret not set"; exit 0; fi
+          T=$(printf '%s' "$T" | tr -d '[:space:]')
+          for path in user "repos/${{ github.repository }}/releases/latest" "repos/${{ github.repository }}"; do
+            code=$(curl -s -o /tmp/r.json -w '%{http_code}' -H "Authorization: Bearer $T" -H "Accept: application/vnd.github+json" "https://api.github.com/$path")
+            msg=$(grep -o '"message": *"[^"]*"' /tmp/r.json | head -1)
+            echo "Token check $path -> HTTP $code $msg"
+            [ "$code" = "200" ] || echo "::warning::APP_GH_TOKEN check failed for $path: HTTP $code $msg"
+          done
+          exp=$(curl -s -D - -o /dev/null -H "Authorization: Bearer $T" https://api.github.com/user | grep -i 'github-authentication-token-expiration' || true)
+          [ -n "$exp" ] && echo "::notice::$exp" || true
+
+      - name: Build web app and copy into Android project
+        env:
+          VITE_GH_TOKEN: ${{ secrets.APP_GH_TOKEN }}
+        run: |
+          [ -z "$VITE_GH_TOKEN" ] && echo "::warning::APP_GH_TOKEN secret not set; updates and cloud backup are off in this build" || true
+          export VITE_GH_TOKEN=$(printf '%s' "$VITE_GH_TOKEN" | tr -d '[:space:]')
+          npx vite build
+          npx cap sync android
+
+      - name: Build signed APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../WardJobs.apk
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WardJobs-apk
+          path: WardJobs.apk
+
+      - name: Publish as latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v1.0.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" WardJobs.apk \
+            --title "Ward Jobs $TAG" \
+            --notes "Built from ${GITHUB_SHA::7}. On your phone: download WardJobs.apk and open it to install or update." \
+            --latest

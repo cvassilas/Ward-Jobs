@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* Theme tokens. Dark is the original look; light is the clean grey/white style. */
+:root {
+  --c-bg: #10161B;
+  --c-surface: #1A2329;
+  --c-surface2: #202C34;
+  --c-border: #2C3941;
+  --c-border2: #3A4A54;
+  --c-text: #E9EDEF;
+  --c-text2: #C5D1D7;
+  --c-muted: #8CA0AA;
+  --c-accent: #D9A441;
+  --c-accent-hover: #C29135;
+  --c-teal: #4FA8A0;
+  --c-teal-hover: #5FB8B0;
+  --c-blue: #3B82F6;
+  --c-on-strong: #FFFFFF;
+  --c-scheme: dark;
+  color-scheme: dark;
+}
+html.theme-light {
+  --c-bg: #F1F3F5;
+  --c-surface: #FFFFFF;
+  --c-surface2: #EEF1F3;
+  --c-border: #DDE2E6;
+  --c-border2: #C9D0D5;
+  --c-text: #1D252B;
+  --c-text2: #3B4750;
+  --c-muted: #66737C;
+  --c-accent: #37474F;
+  --c-accent-hover: #263238;
+  --c-teal: #00897B;
+  --c-teal-hover: #00796B;
+  --c-blue: #3949AB;
+  --c-on-strong: #1D252B;
+  --c-scheme: light;
+  color-scheme: light;
+}
+/* Light theme: darken the pale status colours (Tailwind v4 reads these variables) so they stay readable on white */
+html.theme-light {
+  --color-red-200: #991b1b; --color-red-300: #b91c1c; --color-red-400: #c62828;
+  --color-rose-300: #be123c; --color-rose-400: #c2185b;
+  --color-amber-200: #92400e; --color-amber-300: #a15c07; --color-amber-400: #b26a00;
+  --color-teal-200: #115e59; --color-teal-400: #00796b;
+  --color-purple-300: #6b21a8; --color-purple-400: #7b1fa2;
+  --color-indigo-400: #3949ab; --color-blue-400: #1e63c6;
+  --color-red-950: #fdecec; --color-teal-950: #e3f4f1;
+}
+html.theme-light .shadow-lg, html.theme-light .shadow-xl, html.theme-light .shadow-2xl {
+  --tw-shadow-color: rgb(30 40 50 / 0.06);
+}
+
+@layer base {
+  body {
+    background-color: var(--c-bg);
+    color: var(--c-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Custom scrollbars for dark panel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--c-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4FA8A0;
+}
+
