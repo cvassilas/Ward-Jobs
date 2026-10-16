@@ -54,7 +54,22 @@ export interface Settings {
   removeDischargedAfterHours: number;
   pin?: string; // 4-6 digits; app locks after being in the background
   lockAfterMinutes: number;
+  notify?: NotifyPrefs;
 }
+
+export interface NotifyPrefs {
+  urgent: boolean; // urgent jobs added by others
+  assigned: boolean; // jobs assigned to me
+  completed: boolean; // jobs completed by others
+  followups: boolean; // follow-ups added / closed by others
+  reminders: boolean; // due times and follow-up expected dates
+  details: boolean; // show bed and job text (never initials) in notifications
+  quiet: boolean; // quiet hours
+  quietFrom: string;
+  quietTo: string;
+  push?: boolean; // web push turned on for this phone
+}
+export const DEFAULT_NOTIFY: NotifyPrefs = { urgent: true, assigned: true, completed: false, followups: true, reminders: true, details: true, quiet: false, quietFrom: "21:00", quietTo: "07:30" };
 
 export interface Data { patients: Patient[]; jobs: Job[]; settings: Settings }
 

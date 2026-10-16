@@ -8,6 +8,8 @@ import { JobsScreen, FollowUpScreen, PatientsScreen } from "./components/Screens
 import { HandoverScreen } from "./components/Handover";
 import { SettingsScreen } from "./components/Settings";
 import { SyncPill } from "./components/TeamSync";
+import { Toasts } from "./components/NotifySettings";
+import { useNotificationEngine } from "./lib/notifications";
 import { startSyncLoop } from "./lib/sync";
 
 type Tab = "jobs" | "follow" | "patients" | "handover" | "settings";
@@ -26,8 +28,9 @@ export default function App() {
   // Theme
   useEffect(() => { document.documentElement.classList.toggle("theme-light", data.settings.theme === "light"); }, [data.settings.theme]);
 
-  // Live team sync
+  // Live team sync and notifications
   useEffect(() => { startSyncLoop(); }, []);
+  useNotificationEngine();
 
   // Housekeeping now and every 10 minutes
   useEffect(() => {
@@ -87,6 +90,8 @@ export default function App() {
         {tab === "handover" && <HandoverScreen ward={ward} setWard={setWard} />}
         {tab === "settings" && <SettingsScreen />}
       </main>
+
+      <Toasts />
 
       {update && (
         <div className="fixed left-3 right-3 bottom-[84px] z-50 bg-[var(--c-surface2)] border border-[var(--c-accent)]/60 rounded-2xl p-3 shadow-2xl flex items-center gap-2 max-w-md mx-auto">

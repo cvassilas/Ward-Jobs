@@ -4,6 +4,7 @@ import { useData, updateSettings, clearCompletedNow, wipeEverything } from "../l
 import { appVersion, checkForUpdate, installUpdate, updatesEnabled, UpdateInfo } from "../lib/updates";
 import { card, inputCls, labelCls } from "./ui";
 import { TeamSyncSection } from "./TeamSync";
+import { NotifySection } from "./NotifySettings";
 
 export const SettingsScreen: React.FC = () => {
   const { settings, patients, jobs } = useData();
@@ -32,6 +33,8 @@ export const SettingsScreen: React.FC = () => {
       ))}
 
       <TeamSyncSection />
+
+      <NotifySection />
 
       {section("Appearance", (
         <div className="grid grid-cols-2 gap-2">

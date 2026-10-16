@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { Patient, Job, getData, applyRemote, onLocalChange } from "./store";
 import { SYNC_URL, SYNC_KEY } from "../config";
+import { remoteEvents, RemoteEvent, currentPushEndpoint } from "./notifications";
 
 const TEAM_KEY = "ward_jobs_team_v1";
 const POLL_MS = 4000;
@@ -67,7 +68,7 @@ export function setServerConfig(url: string, key: string) {
 }
 export const syncConfigured = () => { const c = serverConfig(); return !!(c.url && c.key); };
 
-async function rpc<T>(fn: string, body: any): Promise<T> {
+export async function rpc<T>(fn: string, body: any): Promise<T> {
   const { url, key } = serverConfig();
   if (!url || !key) throw new Error("Sync server not set up yet");
   const headers: Record<string, string> = { "Content-Type": "application/json", apikey: key };
@@ -78,6 +79,19 @@ async function rpc<T>(fn: string, body: any): Promise<T> {
     throw new Error(`Sync server error ${r.status}${txt ? `: ${txt.slice(0, 120)}` : ""}`);
   }
   return r.json();
+}
+
+/** Ask the server to alert the team's other phones (web push). Fire and forget. */
+let lastPing = 0;
+async function pingTeam(spaceId: string, urgent: boolean) {
+  if (!urgent && Date.now() - lastPing < 30e3) return;
+  lastPing = Date.now();
+  try {
+    const { url, key } = serverConfig();
+    const headers: Record<string, string> = { "Content-Type": "application/json", apikey: key };
+    if (key.startsWith("eyJ")) headers.Authorization = `Bearer ${key}`;
+    fetch(`${url}/functions/v1/ward-notify`, { method: "POST", headers, body: JSON.stringify({ space: spaceId, exclude: await currentPushEndpoint(), kind: urgent ? "urgent" : "update" }) }).catch(() => {});
+  } catch { /* push is optional */ }
 }
 
 // ---------- crypto ----------
@@ -150,7 +164,12 @@ export async function joinTeam(code: string): Promise<Team> {
   return team!;
 }
 
-export function leaveTeam() { saveTeam(null); }
+export function leaveTeam() {
+  const t = team;
+  saveTeam(null);
+  // Stop "list updated" alerts for the team we left
+  if (t) import("./notifications").then((n) => n.disableWebPush(rpc)).catch(() => {});
+}
 
 // ---------- local changes → pending ----------
 // A change counter per record, so an upload only clears what hasn't changed again while it was in flight.
@@ -222,6 +241,7 @@ async function push() {
     rows.push(await encrypt(t.key, id, payload));
   }
   await rpc("ward_push", { p_space: t.spaceId, p_rows: rows });
+  pingTeam(t.spaceId, ids.some((id) => { const j = d.jobs.find((x) => x.id === id); return !!j && j.priority === "Urgent" && j.status !== "done" && Date.now() - j.createdAt < 5 * 60e3; }));
   const sent = new Set(rows.map((r) => r.id));
   // Only clear what we sent and hasn't changed again since
   const cur = team!;
@@ -246,6 +266,8 @@ async function pull() {
     const jobs = new Map(d.jobs.map((j) => [j.id, j]));
     const pending = { ...t.pending };
     const tombs = { ...t.tombs };
+    const events: RemoteEvent[] = [];
+    const meName = (d.settings.myName || "").trim().toLowerCase();
     const resurrect = (id: string, at: number) => {
       if (tombs[id] && tombs[id].at < at) { delete tombs[id]; if (pending[id] === "tomb") delete pending[id]; }
     };
@@ -269,7 +291,22 @@ async function pull() {
         if (tombs[id] && tombs[id].at >= msg.v.updatedAt) continue;
         resurrect(id, msg.v.updatedAt);
         const local = jobs.get(id);
-        if (!local) { jobs.set(id, msg.v); if (pending[id] === "job") delete pending[id]; continue; }
+        const byOther = (name?: string) => !!name && name.trim().toLowerCase() !== meName;
+        if (!local) {
+          jobs.set(id, msg.v);
+          if (pending[id] === "job") delete pending[id];
+          if (t0.lastSeq > 0 && byOther(msg.v.createdBy)) { // not on the first download after joining
+            events.push({ type: "new", job: msg.v, patient: patients.get(msg.v.patientId) });
+            if (meName && (msg.v.assignee || "").trim().toLowerCase() === meName) events.push({ type: "assigned", job: msg.v, patient: patients.get(msg.v.patientId) });
+          }
+          continue;
+        }
+        if (msg.v.updatedAt > local.updatedAt) {
+          const pat = patients.get(msg.v.patientId);
+          if (local.status !== "done" && msg.v.status === "done" && byOther(msg.v.doneBy)) events.push({ type: msg.v.outcome && !local.outcome ? "followup-closed" : "done", job: msg.v, patient: pat });
+          const last = msg.v.log[msg.v.log.length - 1];
+          if (meName && (msg.v.assignee || "").trim().toLowerCase() === meName && (local.assignee || "").trim().toLowerCase() !== meName && byOther(last?.by)) events.push({ type: "assigned", job: msg.v, patient: pat });
+        }
         const newer = msg.v.updatedAt >= local.updatedAt ? msg.v : local;
         const log = mergeLogs(local.log, msg.v.log);
         jobs.set(id, { ...newer, log });
@@ -279,6 +316,7 @@ async function pull() {
     }
     applyRemote([...patients.values()], [...jobs.values()]);
     saveTeam({ ...team!, lastSeq: maxSeq, pending, tombs });
+    try { remoteEvents(events); } catch { /* never let alerts break sync */ }
     if (rows.length < 500) break;
   }
   if (team && Object.keys(team.pending).length) await push();

@@ -51,6 +51,12 @@ jobs:
             -d '{"p_space":"build-check-aaaaaaaaaaaaaaaaaaaa","p_since":0}')
           body=$(head -c 200 /tmp/s.json)
           if [ "$code" = "200" ]; then echo "::notice::Sync server OK (ward_pull answered)"; else echo "::warning::Sync server check: HTTP $code $body"; fi
+          code=$(curl -s -o /tmp/n.json -w '%{http_code}' -X POST "https://xrjnmsmfdwndjebxlnag.supabase.co/rest/v1/rpc/ward_unsubscribe" \
+            -H "apikey: sb_publishable_3Ayo7DR-LRdbZiWdsXtifw_Dd5l4nT7" -H "Content-Type: application/json" -d '{"p_endpoint":"https://example.invalid/build-check"}')
+          [ "$code" = "204" ] || [ "$code" = "200" ] && echo "::notice::Push tables OK" || echo "::warning::Push tables not set up (run supabase/notifications.sql): HTTP $code $(head -c 150 /tmp/n.json)"
+          code=$(curl -s -o /tmp/f.json -w '%{http_code}' -X POST "https://xrjnmsmfdwndjebxlnag.supabase.co/functions/v1/ward-notify" \
+            -H "apikey: sb_publishable_3Ayo7DR-LRdbZiWdsXtifw_Dd5l4nT7" -H "Content-Type: application/json" -d '{"space":"x"}')
+          [ "$code" = "400" ] && echo "::notice::ward-notify function OK" || echo "::warning::ward-notify function: HTTP $code $(head -c 150 /tmp/f.json)"
 
       - name: Build web app and copy into Android project
         env:
