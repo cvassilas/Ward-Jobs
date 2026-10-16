@@ -4,5 +4,5 @@
  * Can also be set in the app under Settings → Team sync → Server.
  */
 const env = (import.meta as any).env || {};
-export const SYNC_URL: string = env.VITE_SYNC_URL || "";
-export const SYNC_KEY: string = env.VITE_SYNC_KEY || "";
+export const SYNC_URL: string = env.VITE_SYNC_URL || "https://xrjnmsmfdwndjebxlnag.supabase.co";
+export const SYNC_KEY: string = env.VITE_SYNC_KEY || "sb_publishable_3Ayo7DR-LRdbZiWdsXtifw_Dd5l4nT7";

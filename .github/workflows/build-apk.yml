@@ -44,6 +44,14 @@ jobs:
           exp=$(curl -s -D - -o /dev/null -H "Authorization: Bearer $T" https://api.github.com/user | grep -i 'github-authentication-token-expiration' || true)
           [ -n "$exp" ] && echo "::notice::$exp" || true
 
+      - name: Check sync server
+        run: |
+          code=$(curl -s -o /tmp/s.json -w '%{http_code}' -X POST "https://xrjnmsmfdwndjebxlnag.supabase.co/rest/v1/rpc/ward_pull" \
+            -H "apikey: sb_publishable_3Ayo7DR-LRdbZiWdsXtifw_Dd5l4nT7" -H "Content-Type: application/json" \
+            -d '{"p_space":"build-check-aaaaaaaaaaaaaaaaaaaa","p_since":0}')
+          body=$(head -c 200 /tmp/s.json)
+          if [ "$code" = "200" ]; then echo "::notice::Sync server OK (ward_pull answered)"; else echo "::warning::Sync server check: HTTP $code $body"; fi
+
       - name: Build web app and copy into Android project
         env:
           VITE_GH_TOKEN: ${{ secrets.APP_GH_TOKEN }}
