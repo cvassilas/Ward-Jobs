@@ -35,11 +35,30 @@ export const NotifySection: React.FC = () => {
       <h2 className="text-xs font-bold text-[var(--c-text)] uppercase tracking-wider border-b border-[var(--c-border)] pb-2 flex items-center gap-1.5"><Bell className="w-3.5 h-3.5" /> Notifications</h2>
 
       {perm !== "granted" && (
-        <button type="button" onClick={async () => { const ok = await requestPermission(); setPerm(ok ? "granted" : "denied"); }} className="w-full py-2.5 rounded-xl bg-[var(--c-teal)] text-white text-xs font-bold flex items-center justify-center gap-1.5">
-          <Bell className="w-4 h-4" /> Allow notifications
+        <button type="button" disabled={busy} onClick={async () => {
+          setBusy(true); setMsg(null);
+          try {
+            if (!native && !("Notification" in window)) {
+              setMsg(/iPhone|iPad/.test(navigator.userAgent)
+                ? "iPhone only allows notifications in the home-screen app. In Safari: Share → Add to Home Screen, then open Ward Jobs from that icon and tap this again."
+                : "This browser doesn't support notifications.");
+              return;
+            }
+            const ok = await requestPermission();
+            const now = await permissionState();
+            setPerm(now);
+            setMsg(ok ? "Notifications allowed." : now === "denied"
+              ? (native ? "Blocked. Open your phone's Settings → Apps → Ward Jobs → Notifications and turn them on." : /iPhone|iPad/.test(navigator.userAgent) ? "Blocked. Open iPhone Settings → Notifications → Ward Jobs and turn on Allow Notifications." : "Blocked. Allow notifications for this site in the browser's settings.")
+              : "No answer from the phone. Close Ward Jobs fully, reopen it and tap again.");
+          } catch (e: any) {
+            setMsg(`Couldn't ask for permission: ${e?.message || e}`);
+          } finally { setBusy(false); }
+        }} className="w-full py-2.5 rounded-xl bg-[var(--c-teal)] text-white text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-60">
+          <Bell className="w-4 h-4" /> {busy ? "Asking…" : "Allow notifications"}
         </button>
       )}
-      {perm === "denied" && <p className="text-[11px] text-amber-400">Notifications are blocked. Turn them on for Ward Jobs in your phone's settings.</p>}
+      {perm === "denied" && !msg && <p className="text-[11px] text-amber-400">Notifications are blocked. Turn them on for Ward Jobs in your phone's settings.</p>}
+      {msg && perm !== "granted" && <p className="text-[11px] text-amber-400">{msg}</p>}
 
       <div className="divide-y divide-[var(--c-border)]/50">
         <Toggle k="urgent" label="Urgent jobs added by colleagues" />
