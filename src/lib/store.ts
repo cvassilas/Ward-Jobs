@@ -56,7 +56,7 @@ export interface Settings {
   lockAfterMinutes: number;
 }
 
-interface Data { patients: Patient[]; jobs: Job[]; settings: Settings }
+export interface Data { patients: Patient[]; jobs: Job[]; settings: Settings }
 
 const KEY = "ward_jobs_v1";
 const DEFAULT_SETTINGS: Settings = {
@@ -82,10 +82,45 @@ function load(): Data {
   return { patients: [], jobs: [], settings: { ...DEFAULT_SETTINGS } };
 }
 
-function commit(next: Data) {
+// Records changed on this phone (for team sync). Remote changes are applied with remote = true.
+export type ChangeListener = (changed: string[], removed: Array<{ id: string; type: "patient" | "job" }>) => void;
+const changeListeners = new Set<ChangeListener>();
+export const onLocalChange = (l: ChangeListener) => { changeListeners.add(l); return () => { changeListeners.delete(l); }; };
+
+function diff(prev: Data, next: Data) {
+  const changed: string[] = [];
+  const removed: Array<{ id: string; type: "patient" | "job" }> = [];
+  const scan = <T extends { id: string }>(a: T[], b: T[], type: "patient" | "job") => {
+    if (a === b) return;
+    const before = new Map(a.map((x) => [x.id, x]));
+    const after = new Set<string>();
+    for (const x of b) {
+      after.add(x.id);
+      const old = before.get(x.id);
+      if (old !== x && (!old || JSON.stringify(old) !== JSON.stringify(x))) changed.push(x.id);
+    }
+    for (const x of a) if (!after.has(x.id)) removed.push({ id: x.id, type });
+  };
+  scan(prev.patients, next.patients, "patient");
+  scan(prev.jobs, next.jobs, "job");
+  return { changed, removed };
+}
+
+function commit(next: Data, opts: { remote?: boolean } = {}) {
+  const prev = data;
   data = next;
   try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* storage full */ }
+  if (!opts.remote && changeListeners.size) {
+    const { changed, removed } = diff(prev, next);
+    if (changed.length || removed.length) changeListeners.forEach((l) => l(changed, removed));
+  }
   listeners.forEach((l) => l());
+}
+
+/** Apply changes that came from the team server (doesn't trigger another upload). */
+export function applyRemote(patients: Patient[], jobs: Job[]) {
+  const wards = [...new Set([...data.settings.wards, ...patients.map((p) => p.ward)])];
+  commit({ ...data, patients, jobs, settings: { ...data.settings, wards } }, { remote: true });
 }
 
 export function useData(): Data {

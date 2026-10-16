@@ -3,6 +3,7 @@ import { Moon, Sun, Check, X, ShieldCheck } from "lucide-react";
 import { useData, updateSettings, clearCompletedNow, wipeEverything } from "../lib/store";
 import { appVersion, checkForUpdate, installUpdate, updatesEnabled, UpdateInfo } from "../lib/updates";
 import { card, inputCls, labelCls } from "./ui";
+import { TeamSyncSection } from "./TeamSync";
 
 export const SettingsScreen: React.FC = () => {
   const { settings, patients, jobs } = useData();
@@ -29,6 +30,8 @@ export const SettingsScreen: React.FC = () => {
           <input aria-label="My initials" defaultValue={settings.myName} placeholder="e.g. CV or ICU reg" onBlur={(e) => updateSettings({ myName: e.target.value.trim() })} className={inputCls} />
         </div>
       ))}
+
+      <TeamSyncSection />
 
       {section("Appearance", (
         <div className="grid grid-cols-2 gap-2">
@@ -65,7 +68,7 @@ export const SettingsScreen: React.FC = () => {
         <>
           <div className="flex gap-2 text-[11px] text-[var(--c-muted)] leading-snug">
             <ShieldCheck className="w-4 h-4 shrink-0 text-[var(--c-teal)]" />
-            <span>The list is stored only on this phone. There's no cloud backup and nothing is sent to a server. Use bed and initials only.</span>
+            <span>Without team sync, the list stays only on this phone. With team sync, it's encrypted on the phone before it's sent, and the server can't read it. Use bed and initials only.</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

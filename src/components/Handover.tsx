@@ -20,8 +20,9 @@ export const HandoverScreen: React.FC<{ ward: string; setWard: (w: string) => vo
     setMsg(null);
     try {
       if (Capacitor.isNativePlatform()) await Share.share({ title: "Ward jobs handover", text, dialogTitle: "Share handover" });
+      else if ((navigator as any).share && /iPhone|iPad|Android/i.test(navigator.userAgent)) await (navigator as any).share({ title: "Ward jobs handover", text });
       else { await navigator.clipboard.writeText(text); setMsg("Copied to clipboard."); }
-    } catch (e: any) { if (!/cancel/i.test(e?.message || "")) setMsg(e?.message || "Couldn't share."); }
+    } catch (e: any) { if (!/cancel|abort/i.test(`${e?.name} ${e?.message}`)) setMsg(e?.message || "Couldn't share."); }
   };
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
 
@@ -38,7 +39,7 @@ export const HandoverScreen: React.FC<{ ward: string; setWard: (w: string) => vo
         <pre className="text-[11.5px] leading-relaxed whitespace-pre-wrap font-mono bg-[var(--c-bg)] border border-[var(--c-border)] rounded-xl p-3 max-h-80 overflow-y-auto text-[var(--c-text2)]">{text}</pre>
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={shareText} className="py-2.5 rounded-xl bg-[var(--c-teal)] text-white text-xs font-bold flex items-center justify-center gap-1.5">
-            {Capacitor.isNativePlatform() ? <Share2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />} Share as text
+            {Capacitor.isNativePlatform() || /iPhone|iPad|Android/i.test(navigator.userAgent) ? <Share2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />} Share as text
           </button>
           <button type="button" onClick={() => saveFile(handoverPdf({ ward, includeDone }), `handover-${stamp}.pdf`).catch((e) => setMsg(e?.message))} className="py-2.5 rounded-xl border border-[var(--c-border)] text-[var(--c-text)] text-xs font-bold flex items-center justify-center gap-1.5">
             <FileText className="w-4 h-4" /> PDF

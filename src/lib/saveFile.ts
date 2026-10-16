@@ -22,6 +22,17 @@ export async function saveFile(blob: Blob, filename: string): Promise<void> {
     await Share.share({ title: filename, url: written.uri, dialogTitle: `Save or send ${filename}` });
     return;
   }
+  // iPhone / web: share sheet when the browser supports sharing files, otherwise a download
+  try {
+    const file = new File([blob], filename, { type: blob.type || "application/octet-stream" });
+    const nav = navigator as any;
+    if (nav.canShare && nav.canShare({ files: [file] }) && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
+      await nav.share({ files: [file], title: filename });
+      return;
+    }
+  } catch (e: any) {
+    if (e?.name === "AbortError") return;
+  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

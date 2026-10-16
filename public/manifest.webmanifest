@@ -1,0 +1,16 @@
+{
+  "name": "Ward Jobs",
+  "short_name": "Ward Jobs",
+  "description": "Ward jobs list with progress, locked follow-ups and encrypted team sync",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10161B",
+  "theme_color": "#10161B",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

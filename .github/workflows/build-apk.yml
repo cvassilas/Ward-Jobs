@@ -60,6 +60,22 @@ jobs:
           ./gradlew assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk ../WardJobs.apk
 
+      - name: Publish web app (iPhone / browser version)
+        env:
+          T: ${{ secrets.APP_GH_TOKEN }}
+        run: |
+          # Separate build WITHOUT the GitHub token: this copy is public.
+          VITE_GH_TOKEN= npx vite build --outDir web-dist --emptyOutDir
+          if grep -rq "github_pat_\|ghp_" web-dist; then echo "::error::token found in web build"; exit 1; fi
+          T=$(printf '%s' "$T" | tr -d '[:space:]')
+          [ -z "$T" ] && { echo "::warning::APP_GH_TOKEN not set; web app not published"; exit 0; }
+          cd web-dist && touch .nojekyll
+          git init -q -b main && git add -A
+          git -c user.name="Ward Jobs build" -c user.email="noreply@github.com" commit -qm "Web build ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${T}@github.com/cvassilas/ward-jobs-web.git" main \
+            && echo "::notice::Web app published to cvassilas/ward-jobs-web" \
+            || echo "::warning::Couldn't publish the web app. Create the public repo cvassilas/ward-jobs-web and make sure APP_GH_TOKEN can write to it."
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:

@@ -7,6 +7,8 @@ import { checkForUpdate, installUpdate, UpdateInfo } from "./lib/updates";
 import { JobsScreen, FollowUpScreen, PatientsScreen } from "./components/Screens";
 import { HandoverScreen } from "./components/Handover";
 import { SettingsScreen } from "./components/Settings";
+import { SyncPill } from "./components/TeamSync";
+import { startSyncLoop } from "./lib/sync";
 
 type Tab = "jobs" | "follow" | "patients" | "handover" | "settings";
 const TITLES: Record<Tab, string> = { jobs: "Ward jobs", follow: "Follow-up", patients: "Patients", handover: "Handover", settings: "Settings" };
@@ -23,6 +25,9 @@ export default function App() {
 
   // Theme
   useEffect(() => { document.documentElement.classList.toggle("theme-light", data.settings.theme === "light"); }, [data.settings.theme]);
+
+  // Live team sync
+  useEffect(() => { startSyncLoop(); }, []);
 
   // Housekeeping now and every 10 minutes
   useEffect(() => {
@@ -74,6 +79,7 @@ export default function App() {
             <h1 className="text-2xl font-bold tracking-tight">{TITLES[tab]}</h1>
             <p className="text-xs text-[var(--c-muted)]">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}{data.settings.myName ? ` · ${data.settings.myName}` : ""}</p>
           </div>
+          <SyncPill />
         </header>
         {tab === "jobs" && <JobsScreen ward={ward} setWard={setWard} />}
         {tab === "follow" && <FollowUpScreen ward={ward} setWard={setWard} />}

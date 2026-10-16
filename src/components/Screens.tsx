@@ -50,7 +50,7 @@ export const JobsScreen: React.FC<{ ward: string; setWard: (w: string) => void }
       <div className={`${card} p-3.5 space-y-2`}>
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-bold text-[var(--c-text)]">{prog.done} of {prog.total} jobs done</span>
-          <span className="text-[11px] text-[var(--c-muted)]">{patients.length} patients{urgent ? <> · <strong style={{ color: PRIORITY_COLOR.Urgent }}>{urgent} urgent/overdue</strong></> : null}</span>
+          <span className="text-[11px] text-[var(--c-muted)]">{patients.length} patient{patients.length === 1 ? "" : "s"}{urgent ? <> · <strong style={{ color: PRIORITY_COLOR.Urgent }}>{urgent} urgent/overdue</strong></> : null}</span>
         </div>
         <ProgressBar done={prog.done} total={prog.total} />
         <div className="flex gap-1.5 pt-1">
