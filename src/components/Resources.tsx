@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { FolderOpen, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useData, updateSettings, DEFAULT_LINKS } from "../lib/store";
 import { Sheet, card, inputCls } from "./ui";
+import { DeptSearch, MineRow } from "./DeptSearch";
+import { searchLinks } from "../lib/deptSearch";
 
 /** Folder button for the header: opens the list of guideline / resource links. */
 export const ResourcesButton: React.FC = () => {
@@ -15,16 +17,19 @@ export const ResourcesButton: React.FC = () => {
       </button>
       {open && (
         <Sheet title="Resources" onClose={() => setOpen(false)}>
-          {links.length === 0 && <p className="text-xs text-[var(--c-muted)]">No links yet. Add them in Settings → Resources.</p>}
-          {links.map((l) => (
-            <a key={l.id} href={l.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-2 bg-[var(--c-bg)] border border-[var(--c-border)] rounded-xl px-3 py-3">
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-[var(--c-text)] truncate">{l.title}</span>
-                <span className="block text-[11px] text-[var(--c-muted)] truncate">{l.url.replace(/^https?:\/\//, "").split("/")[0]}</span>
-              </span>
-              <ExternalLink className="w-4 h-4 text-[var(--c-muted)] shrink-0" />
-            </a>
-          ))}
+          <DeptSearch renderExtra={(q) => searchLinks(q, links).map((l) => <MineRow key={l.id} title={l.title} sub={l.url.replace(/^https?:\/\//, "").split("/")[0]} href={l.url} />)}>
+            <p className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--c-muted)] px-1 pt-1">Folders</p>
+            {links.length === 0 && <p className="text-xs text-[var(--c-muted)]">No links yet. Add them in Settings → Resources.</p>}
+            {links.map((l) => (
+              <a key={l.id} href={l.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-2 bg-[var(--c-bg)] border border-[var(--c-border)] rounded-xl px-3 py-3">
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-[var(--c-text)] truncate">{l.title}</span>
+                  <span className="block text-[11px] text-[var(--c-muted)] truncate">{l.url.replace(/^https?:\/\//, "").split("/")[0]}</span>
+                </span>
+                <ExternalLink className="w-4 h-4 text-[var(--c-muted)] shrink-0" />
+              </a>
+            ))}
+          </DeptSearch>
         </Sheet>
       )}
     </>
