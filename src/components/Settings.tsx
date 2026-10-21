@@ -6,6 +6,7 @@ import { card, inputCls, labelCls } from "./ui";
 import { TeamSyncSection } from "./TeamSync";
 import { NotifySection } from "./NotifySettings";
 import { ResourcesSettings } from "./Resources";
+import { ShareAppSection } from "./ShareApp";
 
 export const SettingsScreen: React.FC = () => {
   const { settings, patients, jobs } = useData();
@@ -34,6 +35,8 @@ export const SettingsScreen: React.FC = () => {
       ))}
 
       <TeamSyncSection />
+
+      <ShareAppSection />
 
       <NotifySection />
 
