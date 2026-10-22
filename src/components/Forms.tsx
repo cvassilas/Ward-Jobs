@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { GuidelineSuggestions } from "./GuidelineSuggestions";
 import { Lock } from "lucide-react";
 import {
   Patient, Priority, PRIORITIES, CATEGORIES, Category, addJob, guessCategory, savePatient, useData, bedSort, todayIso,
@@ -54,6 +55,7 @@ export const AddJobSheet: React.FC<{ patientId?: string; ward?: string; followUp
           ))}
         </div>
       </div>
+      <GuidelineSuggestions diagnosis={`${text} ${data.patients.find((p) => p.id === pid)?.summary || ""}`} prefer={data.settings.guidesFrom} />
       <div>
         <label className={labelCls}>Priority</label>
         <div className="grid grid-cols-3 gap-1.5">
@@ -144,6 +146,7 @@ export const PatientSheet: React.FC<{ patient?: Patient; ward?: string; onClose:
           <input aria-label="Summary" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="e.g. Day 3 urosepsis, weaning norad" className={inputCls} />
         </div>
       </div>
+      <GuidelineSuggestions diagnosis={summary} prefer={data.settings.guidesFrom} />
       {clash && <p className="text-xs text-amber-400">Bed {clash.bed} on {clash.ward} already has {clash.initials}. Discharge them first if the bed has changed hands.</p>}
       <button type="button" disabled={!ok} onClick={() => { const p = savePatient({ id: patient?.id, ward: wardValue, bed: bed.trim(), initials: initials.trim(), summary: summary.trim() }); onSaved?.(p); onClose(); }}
         className="w-full py-3.5 rounded-2xl bg-[var(--c-accent)] text-[var(--c-bg)] font-bold disabled:opacity-40">

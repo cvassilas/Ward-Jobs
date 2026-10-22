@@ -4,6 +4,7 @@ import {
   Status, STATUS_LABEL, PRIORITIES, CATEGORIES, setStatus, addNote, editJob, lockAsFollowUp,
   closeFollowUp, deleteJob, fmtStamp, todayIso, useData,
 } from "../lib/store";
+import { GuidelineSuggestions } from "./GuidelineSuggestions";
 import { Sheet, PatientLabel, inputCls, labelCls, STATUS_COLOR, PRIORITY_COLOR } from "./ui";
 
 /** Job detail: status and progress notes with a timestamped timeline, edit, lock as follow-up. */
@@ -39,6 +40,8 @@ export const JobSheet: React.FC<{ jobId: string; onClose: () => void }> = ({ job
         <label className={labelCls}>Job</label>
         <textarea aria-label="Job" rows={2} defaultValue={job.text} onBlur={(e) => e.target.value.trim() && e.target.value !== job.text && editJob(job.id, { text: e.target.value })} className={`${inputCls} resize-y`} />
       </div>
+
+      <GuidelineSuggestions diagnosis={`${job.text} ${patient?.summary || ""}`} prefer={data.settings.guidesFrom} />
 
       <div>
         <label className={labelCls}>Progress</label>

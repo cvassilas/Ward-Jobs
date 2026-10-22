@@ -47,6 +47,15 @@ export const ResourcesSettings: React.FC = () => {
     <div className={`${card} p-4 space-y-3`}>
       <h2 className="text-xs font-bold text-[var(--c-text)] uppercase tracking-wider border-b border-[var(--c-border)] pb-2 flex items-center gap-1.5"><FolderOpen className="w-3.5 h-3.5" /> Resources</h2>
       <p className="text-[11px] text-[var(--c-muted)]">Links in the folder button at the top of every screen.</p>
+      <div>
+        <label className="block text-[11px] font-semibold text-[var(--c-muted)] mb-1">Suggested guidelines: show first</label>
+        <select aria-label="Guidelines to show first" value={settings.guidesFrom || ""} onChange={(e) => updateSettings({ guidesFrom: (e.target.value || undefined) as any })} className={inputCls}>
+          <option value="">Both departments equally</option>
+          <option value="wx">Whipps Cross</option>
+          <option value="accu">Royal London ACCU</option>
+        </select>
+        <p className="text-[10.5px] text-[var(--c-muted)] mt-1">Jobs and patient summaries show matching local guidelines. Matching happens on this phone; nothing is sent anywhere.</p>
+      </div>
       {links.map((l) => (
         <div key={l.id} className="flex items-center gap-2">
           <input aria-label="Link name" defaultValue={l.title} onBlur={(e) => e.target.value.trim() && save(links.map((x) => (x.id === l.id ? { ...x, title: e.target.value.trim() } : x)))} className={inputCls} />

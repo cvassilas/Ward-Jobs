@@ -56,6 +56,7 @@ export interface Settings {
   lockAfterMinutes: number;
   notify?: NotifyPrefs;
   links?: ResourceLink[];
+  guidesFrom?: "wx" | "accu"; // rank this department's guidelines first
 }
 
 export interface ResourceLink { id: string; title: string; url: string }
