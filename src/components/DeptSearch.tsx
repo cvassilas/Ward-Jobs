@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Search, X, FileText, Folder, Link2, ExternalLink } from "lucide-react";
-import { searchDept, DEPTS, DeptSource, DEPT_INDEX_DATE, deptDocs } from "../lib/deptSearch";
+import { searchDept, DEPTS, DeptSource, DEPT_INDEX_DATE, deptDocs, GUIDELINE_DISCLAIMER } from "../lib/deptSearch";
+import { AlertTriangle } from "lucide-react";
 
 const KindIcon: React.FC<{ kind: string }> = ({ kind }) => {
   const C = kind === "folder" ? Folder : kind === "link" ? Link2 : FileText;
@@ -32,6 +33,7 @@ export const DeptSearch: React.FC<{
           className="w-full bg-[var(--c-bg)] text-[var(--c-text)] placeholder-[var(--c-muted)]/70 border border-[var(--c-border)] focus:border-[var(--c-teal)] rounded-xl pl-9 pr-9 py-2.5 text-sm outline-none" />
         {active && <button type="button" aria-label="Clear search" onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[var(--c-muted)]"><X className="w-4 h-4" /></button>}
       </div>
+      <Disclaimer />
       {active && (
         <div className="flex gap-1.5">
           {(["all", "wx", "accu"] as const).map((s) => (
@@ -67,6 +69,13 @@ export const DeptSearch: React.FC<{
     </div>
   );
 };
+
+/** "Box copies may not be the latest" warning shown wherever department guidelines appear. */
+export const Disclaimer: React.FC<{ className?: string }> = ({ className }) => (
+  <p className={`flex gap-1.5 items-start text-[10.5px] leading-snug text-amber-500 px-1 ${className || ""}`}>
+    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" /> <span>{GUIDELINE_DISCLAIMER}</span>
+  </p>
+);
 
 /** Small row used for an app's own matches in the results list. */
 export const MineRow: React.FC<{ title: string; sub: string; href?: string; onClick?: () => void; icon?: React.ReactNode }> = ({ title, sub, href, onClick, icon }) => {

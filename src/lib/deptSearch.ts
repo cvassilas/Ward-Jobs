@@ -6,6 +6,8 @@
  */
 import raw from "./deptIndex.json";
 
+export const GUIDELINE_DISCLAIMER = "Box copies may not be the latest version and are for interest only. Check the current Trust guideline (intranet) before acting on anything.";
+
 export type DeptSource = "wx" | "accu";
 
 export const DEPTS: Record<DeptSource, { label: string; short: string; shared: string }> = {

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { suggestGuidelines, sourceForWorkplace } from "../lib/guidelineMatch";
+import { Disclaimer } from "./DeptSearch";
 import { DEPTS, DeptSource } from "../lib/deptSearch";
 
 /** "Local guidelines" for a diagnosis, matched on the phone against the department Box folders. */
@@ -29,6 +30,7 @@ export const GuidelineSuggestions: React.FC<{ diagnosis?: string; workplace?: st
           {more ? <>Fewer <ChevronUp className="w-3.5 h-3.5" /></> : <>{hits.length - 3} more <ChevronDown className="w-3.5 h-3.5" /></>}
         </button>
       )}
+      <Disclaimer className="pt-0.5" />
     </div>
   );
 };
